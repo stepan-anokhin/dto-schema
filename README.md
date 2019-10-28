@@ -21,7 +21,7 @@ Define a schema:
 ```ruby
 require 'dto_schema'
 
-schema = DTO::Schema.new do
+schema = DTOSchema::define do
     object :tag do
         required :name, String, check: [:not_empty]
         required :value, String, check: [:not_empty]
