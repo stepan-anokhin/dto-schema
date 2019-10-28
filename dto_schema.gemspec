@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.summary     = s.description
   s.authors     = ["Stepan Anokhin"]
   s.email       = 'stepan.anokhin@gmail.com'
-  s.files       = %w(dto_schema.gemspec) + Dir["*.md", "bin/*", "lib/**/*.rb"]
+  s.files       = %w(dto_schema.gemspec) + Dir["*.md", "lib/**/*.rb"]
   s.homepage    = 'https://github.com/stepan-anokhin/dto-schema'
   s.license     = 'MIT'
 end
