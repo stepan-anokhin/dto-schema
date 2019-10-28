@@ -5,6 +5,12 @@
 
 DTO-Schema is a small Ruby library to validate simple data. 
 
+## Installation
+
+```shell script
+gem install dto_schema
+```
+
 ## What is validated?
 
 A notion of `Simple Data` could be defined as follows: 
