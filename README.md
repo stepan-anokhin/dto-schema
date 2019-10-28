@@ -2,7 +2,9 @@
 
 DTO-Schema is a small Ruby library to validate simple data. 
 
-A notion of `Simple Date` could be defined as follows: 
+## What is validated?
+
+A notion of `Simple Data` could be defined as follows: 
 * `nil` is a simple data
 * `String` is a simple data
 * `Numeric` is a simple data
