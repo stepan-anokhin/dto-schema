@@ -1,5 +1,6 @@
 # Ruby DTO-Schema
 [![Gem Version](https://badge.fury.io/rb/dto_schema.svg)](https://badge.fury.io/rb/dto_schema)
+[![Build Status](https://travis-ci.org/stepan-anokhin/dto-schema.svg?branch=master)](https://travis-ci.org/stepan-anokhin/dto-schema)
 
 
 DTO-Schema is a small Ruby library to validate simple data. 
