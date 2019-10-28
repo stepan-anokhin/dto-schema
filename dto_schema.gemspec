@@ -6,11 +6,11 @@ Gem::Specification.new do |s|
   s.name        = 'dto_schema'
   s.version     = DTOSchema::VERSION
   s.date        = '2019-10-28'
-  s.summary     = "DTO validation schema."
   s.description = "A small library to validate simple data."
+  s.summary     = s.description
   s.authors     = ["Stepan Anokhin"]
   s.email       = 'stepan.anokhin@gmail.com'
-  s.files       = ["lib/dto_schema.rb"]
+  s.files       = %w(dto_schema.gemspec) + Dir["*.md", "bin/*", "lib/**/*.rb"]
   s.homepage    = 'https://github.com/stepan-anokhin/dto-schema'
   s.license     = 'MIT'
 end
