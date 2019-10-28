@@ -249,7 +249,7 @@ module DTOSchema
       private
 
       def resolve_check (check)
-        return check if check.is_a? BoundCheck
+        return check if check.is_a? Checks::BoundCheck
         return Checks::CheckReference.new @schema, check if check.is_a? Symbol
         raise ArgumentError, "Unexpected check type: #{check.class}"
       end

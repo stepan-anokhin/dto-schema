@@ -8,8 +8,8 @@ module DTOSchema
     end
 
     def method_missing (name, args = {})
-      check = CheckReference.new @schema, name
-      BoundCheck.new check, args
+      check = Checks::CheckReference.new @schema, name
+      Checks::BoundCheck.new check, args
     end
   end
 
@@ -27,7 +27,7 @@ module DTOSchema
     end
 
     def object(name, &definition)
-      validator = ObjectValidator.new self
+      validator = Validators::ObjectValidator.new self
       validator.instance_eval(&definition)
       @validators[name] = validator
 
@@ -51,14 +51,14 @@ module DTOSchema
     end
 
     def list
-      ListValidator.new self, AnyValidator.new
+      Validators::ListValidator.new self, Validators::AnyValidator.new
     end
 
     def check(name = nil, &body)
       return @check_binder if name.nil? && body.nil?
       raise ArgumentError, "Check definition name is not provided" if name.nil?
       raise ArgumentError, "Check definition is not provided for `#{name}`" if body.nil?
-      result = Check.new(body)
+      result = Checks::Check.new(body)
       @checks[name] = result
       result
     end
