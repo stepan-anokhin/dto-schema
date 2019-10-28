@@ -238,7 +238,7 @@ module DTOSchema
       def invariant (fields = nil, &block)
         fields = [] if fields.nil?
         fields = [fields] if fields.is_a? Symbol
-        @invariants.append(Invariant.new fields, block)
+        @invariants << Invariant.new(fields, block)
       end
 
       def resolve
