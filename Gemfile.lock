@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    dto_schema (0.0.0)
+    dto_schema (0.0.1)
 
 GEM
   remote: https://rubygems.org/
