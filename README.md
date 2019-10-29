@@ -60,6 +60,17 @@ And result will be:
 
 ## Usage
 
+* [Creating a schema](#creating-a-schema)
+* [Defining a DTO type](#defining-a-dto-type)
+* [Validating data](#validating-data)
+* [Inline checks](#inline-checks)
+* [Reusing checks](#reusing-checks)
+* [Parametrized checks](#parametrized-checks)
+* [Referencing one DTO from another](#referencing-one-dto-from-another)
+* [List as attribute type](#list-as-attribute-type)
+* [List as DTO](#list-as-dto)
+* [Invariants](#invariants)
+
 ### Creating a schema
 
 DTO-Schema is defined with `DTOSchema::define` method
@@ -220,7 +231,7 @@ p schema.validate_book data
 {:details=>{:language=>["Cannot be null"]}}
 ```
 
-## List as attribute type
+### List as attribute type
 
 DTO-Schema provides a `list` method to define list-attributes:
 ```ruby
