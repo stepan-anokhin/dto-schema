@@ -70,6 +70,7 @@ And result will be:
 * [List as attribute type](#list-as-attribute-type)
 * [List as DTO](#list-as-dto)
 * [Invariants](#invariants)
+* [Using Bool and Any](#using-bool-and-any)
 
 ### Creating a schema
 
