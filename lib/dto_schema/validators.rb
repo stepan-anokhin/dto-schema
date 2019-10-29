@@ -10,27 +10,7 @@ module DTOSchema
 
       protected
 
-      def resolve_validator (spec)
-        return PrimitiveValidator.new(spec) if primitive? spec
-        return spec if validator? spec
-        resolve_reference spec if reference? spec
-      end
 
-      def primitive? (spec)
-        spec.is_a?(Class) && (spec <= Numeric || spec <= String)
-      end
-
-      def validator? (spec)
-        spec.is_a? BaseValidator
-      end
-
-      def reference? (spec)
-        spec.is_a? Symbol
-      end
-
-      def resolve_reference (ref)
-        ValidatorReference.new @schema, ref
-      end
     end
 
     class BoolValidator < BaseValidator
@@ -98,8 +78,9 @@ module DTOSchema
     end
 
     class ListValidator < BaseValidator
-      def initialize(schema, item_validator)
+      def initialize(schema, item_validator, checks = nil)
         @schema, @item_validator = schema, item_validator
+        @checks = checks || []
       end
 
       def valid? (data)
@@ -113,7 +94,12 @@ module DTOSchema
           errors = @item_validator.validate value
           result[i] = errors unless errors.empty?
         end
-        result
+        return result unless result.empty?
+        @checks.each do |check|
+          errors = check.validate data
+          return errors unless errors.empty?
+        end
+        {}
       end
 
       def valid_structure? (data)
@@ -121,7 +107,7 @@ module DTOSchema
       end
 
       def [] (spec)
-        validator = resolve_validator spec
+        validator = Parse::parse_validator spec, @schema
         ListValidator.new @schema, validator
       end
 
@@ -133,15 +119,15 @@ module DTOSchema
 
     class FieldValidator < BaseValidator
       def initialize(schema, name, required, type, check)
-        raise ArgumentError, "'#{name}' cannot have checks as it is not a primitive" unless check.empty? || primitive?(type)
+        raise ArgumentError, "'#{name}' cannot have checks as it is not a primitive" unless check.empty? || Parse::primitive?(type)
         @schema, @name, @required, @type, @check = schema, name, required, type, check
-        @type_validator = resolve_validator type
+        @type_validator = Parse::parse_validator type, @schema
       end
 
       def validate (data)
         return ["Cannot be null"] if @required && data.nil?
         return [] if !@required && data.nil?
-        return @type_validator.validate data unless primitive? @type
+        return @type_validator.validate data unless Parse::primitive? @type
         type_check = @type_validator.validate data
         return type_check unless type_check.empty?
         @check.collect { |check| check.validate data }.flatten(1)
@@ -187,10 +173,8 @@ module DTOSchema
       end
 
       def field (name, required: false, type: AnyValidator.new, check: nil, &validations)
-        check ||= []
-        check = [check] if check.is_a?(Symbol) || check.is_a?(Checks::BoundCheck)
-        check = check.collect { |check_spec| resolve_check check_spec }
-        check.append(Checks::Check.new validations) unless validations.nil?
+        check = Checks::parse_checks check, @schema
+        check << Checks::Check.new(validations) unless validations.nil?
         @fields[name] = FieldValidator.new @schema, name, required, type, check
       end
 
@@ -228,7 +212,7 @@ module DTOSchema
       end
 
       def list
-        @schema.list
+        ListValidator.new @schema, AnyValidator.new
       end
 
       def check
@@ -245,16 +229,26 @@ module DTOSchema
         @fields.each_value { |field| field.resolve }
         self
       end
-
-      private
-
-      def resolve_check (check)
-        return check if check.is_a? Checks::BoundCheck
-        return Checks::CheckReference.new @schema, check if check.is_a? Symbol
-        raise ArgumentError, "Unexpected check type: #{check.class}"
-      end
     end
 
+    module Parse
+      def self.parse_validator (spec, schema)
+        return PrimitiveValidator.new(spec) if primitive? spec
+        return spec if validator? spec
+        ValidatorReference.new(schema, spec) if reference? spec
+      end
 
+      def self.primitive? (spec)
+        spec.is_a?(Class) && (spec <= Numeric || spec <= String)
+      end
+
+      def self.validator? (spec)
+        spec.is_a? BaseValidator
+      end
+
+      def self.reference? (spec)
+        spec.is_a? Symbol
+      end
+    end
   end
 end

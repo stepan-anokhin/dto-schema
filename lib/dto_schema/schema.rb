@@ -30,28 +30,18 @@ module DTOSchema
       validator = Validators::ObjectValidator.new self
       validator.instance_eval(&definition)
       @validators[name] = validator
-
-      self.define_singleton_method(name) do
-        validator
-      end
-
-      self.define_singleton_method("#{name}?".to_sym) do |data|
-        validator.valid_structure? data
-      end
-
-      self.define_singleton_method("validate_#{name}".to_sym) do |data|
-        validator.validate data
-      end
-
-      self.define_singleton_method("valid_#{name}?".to_sym) do |data|
-        validator.valid? data
-      end
-
+      generate_methods name, validator
       validator
     end
 
-    def list
-      Validators::ListValidator.new self, Validators::AnyValidator.new
+    def list(name, item_type, check: nil, &predicate)
+      check = Checks::parse_checks check, self
+      check << Checks::Check.new(predicate) unless predicate.nil?
+      item_validator = Validators::Parse::parse_validator item_type, self
+      validator = Validators::ListValidator.new self, item_validator, check
+      @validators[name] = validator
+      generate_methods name, validator
+      validator
     end
 
     def check(name = nil, &body)
@@ -77,6 +67,26 @@ module DTOSchema
     def resolve_check (name)
       raise NameError, "Undefined check `#{name}'" unless @checks.include? name
       @checks[name]
+    end
+
+    private
+
+    def generate_methods (name, validator)
+      self.define_singleton_method(name) do
+        validator
+      end
+
+      self.define_singleton_method("#{name}?".to_sym) do |data|
+        validator.valid_structure? data
+      end
+
+      self.define_singleton_method("validate_#{name}".to_sym) do |data|
+        validator.validate data
+      end
+
+      self.define_singleton_method("valid_#{name}?".to_sym) do |data|
+        validator.valid? data
+      end
     end
   end
 end

@@ -219,7 +219,7 @@ p schema.validate_book data
 {:details=>{:language=>["Cannot be null"]}}
 ```
 
-## List attributes and DTOs
+## List attributes
 
 DTO-Schema provides a `list` method to define list-attributes:
 ```ruby
@@ -266,4 +266,36 @@ p schema.validate_tree data
 ```
 ```
 {:child=>{1=>{:value=>["Must be a Numeric"]}}}
+```
+List item type may be any valid type including list itself: `list[list[Numeric]]`.
+
+### List DTO
+
+DTO-Schema allows to declare list as independent DTO type
+```ruby
+schema = DTOSchema::define do
+  object :polygon do
+    required :name, String
+    optional :vertices, list[:point]
+  end
+
+  list :point, Float do |items|
+    next "Must contain exactly 2 items" unless items.size == 2
+  end
+end
+```
+```ruby
+data = {
+    name: "My Polygon",
+    vertices: [
+        [1.0, 2.0],
+        [5.0]
+    ],
+}
+p schema.validate_polygon data
+p schema.point? [1.0, 2.0]
+```
+```
+{:vertices=>{1=>["Must contain exactly 2 items"]}}
+true
 ```

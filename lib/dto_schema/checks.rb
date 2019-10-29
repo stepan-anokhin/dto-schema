@@ -61,5 +61,17 @@ module DTOSchema
       end
     end
 
+    def self.create_check (spec, schema)
+      return spec if spec.is_a? Checks::BoundCheck
+      return Checks::CheckReference.new schema, spec if spec.is_a? Symbol
+      raise ArgumentError, "Unexpected check type: #{spec.class}"
+    end
+
+    def self.parse_checks(checks, schema)
+      checks ||= []
+      checks = [checks] if checks.is_a?(Symbol) || checks.is_a?(BoundCheck)
+      checks.collect { |spec| Checks::create_check(spec, schema) }
+    end
+
   end
 end
