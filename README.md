@@ -299,3 +299,29 @@ p schema.point? [1.0, 2.0]
 {:vertices=>{1=>["Must contain exactly 2 items"]}}
 true
 ```
+
+### Invariants
+Sometimes it is useful to check some invariants across DTO attributes. 
+To declare such validation DTO-Schema provides an `invariant (fields, &block)` method. 
+```ruby
+schema = DTOSchema::define do
+  object :new_account do
+    required :password, String
+    required :confirm_password, String
+
+    invariant :confirm_password do |data|
+      next "Passwords must be equal" if data[:password] != data[:confirm_password]
+    end
+  end
+end
+```
+```ruby
+data = {
+    password: "foo",
+    confirm_password: "bar",
+}
+p schema.validate_new_account data
+```
+```
+{:confirm_password=>["Passwords must be equal"]}
+```
