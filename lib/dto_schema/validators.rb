@@ -7,10 +7,6 @@ module DTOSchema
       def resolve
         self
       end
-
-      protected
-
-
     end
 
     class BoolValidator < BaseValidator
@@ -24,6 +20,8 @@ module DTOSchema
       end
 
       alias :valid_structure? :valid?
+
+      INSTANCE = BoolValidator.new
     end
 
     class AnyValidator < BaseValidator
@@ -31,11 +29,13 @@ module DTOSchema
         true
       end
 
-      def validate
+      def validate (data)
         []
       end
 
       alias :valid_structure? :valid?
+
+      INSTANCE = AnyValidator.new
     end
 
     class PrimitiveValidator < BaseValidator
@@ -172,7 +172,7 @@ module DTOSchema
         @invariants = []
       end
 
-      def field (name, required: false, type: AnyValidator.new, check: nil, &validations)
+      def field (name, required: false, type: AnyValidator::INSTANCE, check: nil, &validations)
         check = Checks::parse_checks check, @schema
         check << Checks::Check.new(validations) unless validations.nil?
         @fields[name] = FieldValidator.new @schema, name, required, type, check
@@ -212,7 +212,15 @@ module DTOSchema
       end
 
       def list
-        ListValidator.new @schema, AnyValidator.new
+        ListValidator.new @schema, AnyValidator::INSTANCE
+      end
+
+      def bool
+        BoolValidator::INSTANCE
+      end
+
+      def any
+        AnyValidator::INSTANCE
       end
 
       def check

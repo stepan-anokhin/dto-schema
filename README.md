@@ -78,7 +78,7 @@ DTO-Schema is defined with `DTOSchema::define` method
 require 'dto_schema'
 
 schema = DTOSchema::define do
-    # schema definition go here ... 
+    # schema definition goes here ... 
 end
 ```
 
@@ -336,4 +336,32 @@ p schema.validate_new_account data
 ```
 ```
 {:confirm_password=>["Passwords must be equal"]}
+```
+
+### Using Bool and Any
+
+Ruby doesn't have a single class for boolean values (instead it has `TrueClass` and `FalseClass`). 
+DTO-Schema provides a `bool` method to expect boolean attribute type. 
+
+Sometimes we want to verify that some attribute is presented whatever value it has. For this purpose
+DTO-Schema provides an `any` method that could be used as attribute type. 
+```ruby
+schema = DTOSchema::define do
+  object :envelope do
+    required :custom_data, any
+    required :flags, list[bool]
+  end
+end
+```
+```ruby
+data = {
+    custom_data: {
+        anything: "whatever"
+    },
+    flags: [true, false, 42]
+}
+p schema.validate_envelope data
+```
+```
+{:flags=>{2=>["Must be boolean"]}}
 ```
