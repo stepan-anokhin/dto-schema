@@ -190,7 +190,7 @@ module DTOSchema
         check ||= []
         check = [check] if check.is_a?(Symbol) || check.is_a?(Checks::BoundCheck)
         check = check.collect { |check_spec| resolve_check check_spec }
-        check.append(Check.new validations) unless validations.nil?
+        check.append(Checks::Check.new validations) unless validations.nil?
         @fields[name] = FieldValidator.new @schema, name, required, type, check
       end
 
