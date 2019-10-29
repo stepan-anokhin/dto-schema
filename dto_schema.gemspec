@@ -13,4 +13,5 @@ Gem::Specification.new do |s|
   s.files       = %w(dto_schema.gemspec) + Dir["*.md", "lib/**/*.rb"]
   s.homepage    = 'https://github.com/stepan-anokhin/dto-schema'
   s.license     = 'MIT'
+  s.required_ruby_version = ">= 2.2.10"
 end
