@@ -11,15 +11,16 @@ DTO-Schema is a small Ruby library to validate simple data.
 gem install dto_schema
 ```
 
-## What is validated?
+## What is being validated?
 
-DTO-Schema a simple data. A notion of `Simple Data` could be defined as follows: 
-* `nil` is a simple data
-* `String` is a simple data
-* `Numeric` is a simple data
-* Boolean is a simple data
-* `Array` of simple data is a simple data
-* `Hash` with symbolic keys and simple-data values is a simple data
+DTO-Schema validates a _"simple data"_. 
+A notion of _"simple data"_ could be defined as follows: 
+* `nil` is a _simple data_
+* `String` is a _simple data_
+* `Numeric` is a _simple data_
+* Boolean is a _simple data_
+* `Array` of _simple data_ is a _simple data_ itself
+* `Hash` with symbolic keys and _simple-data_ values is a _simple data_ itself
 
 ## Example 
 
@@ -219,7 +220,7 @@ p schema.validate_book data
 {:details=>{:language=>["Cannot be null"]}}
 ```
 
-## List attributes
+## List as attribute type
 
 DTO-Schema provides a `list` method to define list-attributes:
 ```ruby
@@ -269,7 +270,7 @@ p schema.validate_tree data
 ```
 List item type may be any valid type including list itself: `list[list[Numeric]]`.
 
-### List DTO
+### List as DTO
 
 DTO-Schema allows to declare list as independent DTO type
 ```ruby
