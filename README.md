@@ -83,13 +83,13 @@ schema = DTOSchema::define do
   end
 end
 ```
-Each DTO definition provides `required` and `optional` method to declare DTO fields.
+Each DTO definition provides `required` and `optional` method to declare DTO attributes.
 
-In the example above schema defines `post` DTO with one optional and one required field.
+The schema above defines `post` DTO with optional attribute `body` and required attribute `title`.
 
 ### Validating data
 
-When DTO is defined schema will dynamically define a number of methods to use it. 
+For each defined DTO schema provides a number of dynamically-generated methods to access it. 
 For example if we define a `post` DTO as shown above, the schema will have the 
 following methods:
 * `post` - to get the *post*-validator
@@ -111,7 +111,7 @@ p schema.validate_post data
 
 ### Inline checks
 To apply a custom checks to a DTO attributes, `required` and `optional` methods accept
-a block which will be called during validation with an attribute value as an argument. 
+an optional block which is called during validation with an attribute value as an argument. 
 
 A block must return either an Array of error-messages, a single error message or `nil`.
 
@@ -158,7 +158,7 @@ end
 ```
 This is an equivalent of the previous example. 
 
-### Defining parametrized checks
+### Parametrized checks
 
 Sometimes it is useful to define a parametrized checks. It could be done like this:
 ```ruby
@@ -241,7 +241,7 @@ p schema.validate_book data
 {:pages=>{1=>["Must be a String"]}}
 ```
 
-You may reference a DTO (the same or another) as a list item type:
+You may reference any DTO as a list item type:
 ```ruby
 schema = DTOSchema::define do
   object :tree do
