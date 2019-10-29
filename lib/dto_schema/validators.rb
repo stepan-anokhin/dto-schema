@@ -106,14 +106,20 @@ module DTOSchema
         data.is_a?(Array) && data.all? { |item| @item_validator.valid_structure? item }
       end
 
-      def [] (spec)
-        validator = Parse::parse_validator spec, @schema
-        ListValidator.new @schema, validator
-      end
-
       def resolve
         @item_validator.resolve
         self
+      end
+
+      class Builder
+        def initialize(schema)
+          @schema = schema
+        end
+
+        def [] (spec)
+          validator = Parse::parse_validator spec, @schema
+          ListValidator.new @schema, validator
+        end
       end
     end
 
@@ -172,20 +178,6 @@ module DTOSchema
         @invariants = []
       end
 
-      def field (name, required: false, type: AnyValidator::INSTANCE, check: nil, &validations)
-        check = Checks::parse_checks check, @schema
-        check << Checks::Check.new(validations) unless validations.nil?
-        @fields[name] = FieldValidator.new @schema, name, required, type, check
-      end
-
-      def required(name, type, check: nil, &validations)
-        field(name, required: true, type: type, check: check, &validations)
-      end
-
-      def optional(name, type, check: nil, &validations)
-        field(name, required: false, type: type, check: check, &validations)
-      end
-
       def validate (data)
         return ["Cannot be null"] if data.nil?
         return ["Must be object"] unless data.is_a? Hash
@@ -211,31 +203,61 @@ module DTOSchema
         @fields.all? { |name, validator| validator.valid_structure? data[name] }
       end
 
-      def list
-        ListValidator.new @schema, AnyValidator::INSTANCE
+      def define_invariant(invariant)
+        @invariants << invariant
       end
 
-      def bool
-        BoolValidator::INSTANCE
-      end
-
-      def any
-        AnyValidator::INSTANCE
-      end
-
-      def check
-        @schema.check
-      end
-
-      def invariant (fields = nil, &block)
-        fields = [] if fields.nil?
-        fields = [fields] if fields.is_a? Symbol
-        @invariants << Invariant.new(fields, block)
+      def define_field(name, field)
+        @fields[name] = field
       end
 
       def resolve
         @fields.each_value { |field| field.resolve }
         self
+      end
+
+      class Builder
+        def initialize(schema, validator)
+          @schema = schema
+          @validator = validator
+        end
+
+        def field (name, required: false, type: AnyValidator::INSTANCE, check: nil, &validations)
+          check = Checks::parse_checks check, @schema
+          check << Checks::Check.new(validations) unless validations.nil?
+          field = FieldValidator.new(@schema, name, required, type, check)
+          @validator.define_field(name, field)
+        end
+
+        def required(name, type, check: nil, &validations)
+          field(name, required: true, type: type, check: check, &validations)
+        end
+
+        def optional(name, type, check: nil, &validations)
+          field(name, required: false, type: type, check: check, &validations)
+        end
+
+        def list
+          ListValidator::Builder.new @schema
+        end
+
+        def bool
+          BoolValidator::INSTANCE
+        end
+
+        def any
+          AnyValidator::INSTANCE
+        end
+
+        def check
+          @schema.bind_check
+        end
+
+        def invariant (fields = nil, &block)
+          fields = [] if fields.nil?
+          fields = [fields] if fields.is_a? Symbol
+          @validator.define_invariant Invariant.new(fields, block)
+        end
       end
     end
 

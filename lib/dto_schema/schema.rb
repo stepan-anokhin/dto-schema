@@ -13,6 +13,7 @@ module DTOSchema
     end
   end
 
+
   class Schema
     def initialize(&block)
       @validators = {}
@@ -22,35 +23,23 @@ module DTOSchema
     end
 
     def define (&block)
-      self.instance_eval &block unless block.nil?
+      raise ArgumentError, "Block is expected" if block.nil?
+      builder = Builder.new self
+      builder.instance_eval &block
       resolve
     end
 
-    def object(name, &definition)
-      validator = Validators::ObjectValidator.new self
-      validator.instance_eval(&definition)
+    def define_validator(name, validator)
       @validators[name] = validator
-      generate_methods name, validator
-      validator
+      generate_methods(name, validator)
     end
 
-    def list(name, item_type, check: nil, &predicate)
-      check = Checks::parse_checks check, self
-      check << Checks::Check.new(predicate) unless predicate.nil?
-      item_validator = Validators::Parse::parse_validator item_type, self
-      validator = Validators::ListValidator.new self, item_validator, check
-      @validators[name] = validator
-      generate_methods name, validator
-      validator
+    def define_check(name, check)
+      @checks[name] = check
     end
 
-    def check(name = nil, &body)
-      return @check_binder if name.nil? && body.nil?
-      raise ArgumentError, "Check definition name is not provided" if name.nil?
-      raise ArgumentError, "Check definition is not provided for `#{name}`" if body.nil?
-      result = Checks::Check.new(body)
-      @checks[name] = result
-      result
+    def bind_check
+      @check_binder
     end
 
     def resolve
@@ -86,6 +75,37 @@ module DTOSchema
 
       self.define_singleton_method("valid_#{name}?".to_sym) do |data|
         validator.valid? data
+      end
+    end
+
+    class Builder
+      def initialize(schema)
+        @schema = schema
+      end
+
+      def object(name, &definition)
+        validator = Validators::ObjectValidator.new @schema
+        builder = Validators::ObjectValidator::Builder.new @schema, validator
+        builder.instance_eval(&definition)
+        @schema.define_validator(name, validator)
+        validator
+      end
+
+      def list(name, item_type, check: nil, &predicate)
+        check = Checks::parse_checks check, @schema
+        check << Checks::Check.new(predicate) unless predicate.nil?
+        item_validator = Validators::Parse::parse_validator item_type, @schema
+        validator = Validators::ListValidator.new @schema, item_validator, check
+        @schema.define_validator(name, validator)
+        validator
+      end
+
+      def check(name = nil, &body)
+        raise ArgumentError, "Check definition name is not provided" if name.nil?
+        raise ArgumentError, "Check definition is not provided for `#{name}`" if body.nil?
+        result = Checks::Check.new(body)
+        @schema.define_check(name, result)
+        result
       end
     end
   end
