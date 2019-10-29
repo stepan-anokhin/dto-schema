@@ -13,7 +13,7 @@ gem install dto_schema
 
 ## What is validated?
 
-A notion of `Simple Data` could be defined as follows: 
+DTO-Schema a simple data. A notion of `Simple Data` could be defined as follows: 
 * `nil` is a simple data
 * `String` is a simple data
 * `Numeric` is a simple data
@@ -35,7 +35,6 @@ schema = DTOSchema::define do
   
     object :post do
         required :title, String, check: [:not_empty]
-        required :body, String, check: [:not_empty]
         optional :tags, list[:tag]
     end
   
@@ -49,12 +48,222 @@ And then use it to validate data:
 ```ruby
 require 'json'
 
-data = JSON.parse('{"title": 42, "tags":[42, {"name":"", "value":"foo"}]}', symbolize_names: true)
+data = JSON.parse('{"tags":[42, {"name":"", "value":"foo"}]}', symbolize_names: true)
 p schema.post.validate data
 ```
 
 And result will be:
 ```
-{:title=>["Must be a String"], :body=>["Cannot be null"], :tags=>{0=>["Must be object"], 1=>{:name=>["Cannot be empty"]}}}
+{:title=>["Cannot be null"], :tags=>{0=>["Must be object"], 1=>{:name=>["Cannot be empty"]}}}
 ```
 
+## Usage
+
+### Creating a schema
+
+DTO-Schema is defined with `DTOSchema::define` method
+```ruby
+require 'dto_schema'
+
+schema = DTOSchema::define do
+    # schema definition go here ... 
+end
+```
+
+### Defining a DTO type
+
+Use the `object <name> do <definition> end` method to define a new DTO type:
+```ruby
+require 'dto_schema'
+
+schema = DTOSchema::define do
+  object :post do
+    required :title, String 
+    optional :body, String
+  end
+end
+```
+Each DTO definition provides `required` and `optional` method to declare DTO fields.
+
+In the example above schema defines `post` DTO with one optional and one required field.
+
+### Validating data
+
+When DTO is defined schema will dynamically define a number of methods to use it. 
+For example if we define a `post` DTO as shown above, the schema will have the 
+following methods:
+* `post` - to get the *post*-validator
+* `post? (data)` - to check if the data has a valid structure 
+(equivalent of `schema.post.valid_structure? data`, more on this later)
+* `valid_post? (data)` - to check if data is a valid `post` DTO (a short-hand of `schema.post.valid? data`)
+* `validate_post (data)` - get the data validation errors (a short-hand of `schema.post.validate data`)
+
+For example:
+```ruby
+data = {
+  body: 42
+}
+p schema.validate_post data
+```
+```
+{:body=>["Must be a String"], :title=>["Cannot be null"]}
+```
+
+### Inline checks
+To apply a custom checks to a DTO attributes, `required` and `optional` methods accept
+a block which will be called during validation with an attribute value as an argument. 
+
+A block must return either an Array of error-messages, a single error message or `nil`.
+
+Example:
+```ruby
+schema = DTOSchema::define do
+  object :post do
+    required :title, String do |value|
+      next "Cannot be empty" if value.empty?
+    end
+
+    optional :body, String do |value|
+      next "Cannot be empty" if value.empty?
+    end
+  end
+end
+```
+```ruby
+data = {
+    title: true,
+    body: ""
+}
+p schema.validate_post data
+```
+```
+{:title=>["Must be a String"], :body=>["Cannot be empty"]}
+```
+
+### Reusing checks
+
+You can define and reuse checks using a `check` method. 
+Each attribute may have any number of checks.
+```ruby
+schema = DTOSchema::define do
+  object :post do
+    required :title, String, check: :not_empty
+    optional :body, String, check: [:not_empty]
+  end
+
+  check :not_empty do |value|
+    next "Cannot be empty" if value.empty?
+  end
+end
+```
+This is an equivalent of the previous example. 
+
+### Defining parametrized checks
+
+Sometimes it is useful to define a parametrized checks. It could be done like this:
+```ruby
+schema = DTOSchema::define do
+  object :post do
+    required :title, String, check: check.length(min: 3)
+    optional :body, String, check: check.length(max: 2)
+  end
+
+  check :length do |value, min: 0, max: nil|
+    next "Must contain at least #{min} chars" if value.size < min
+    next "Must contain at max #{max} chars" if !max.nil? && value.size > max
+  end
+end
+```
+```ruby
+data = {
+    title: "hi",
+    body: "foo"
+}
+p schema.validate_post data
+```
+```
+{:title=>["Must contain at least 3 chars"], :body=>["Must contain at max 2 chars"]}
+```
+
+### Referencing one DTO from another
+
+You may define any number of DTOs and embed one into another. 
+To do that you simply use dto name as an attribute type.
+```ruby
+schema = DTOSchema::define do
+  object :book_details do
+    required :pages, Numeric
+    required :author, String
+    required :language, String
+  end
+
+  object :book do
+    required :title, String
+    required :text, String
+    required :details, :book_details
+  end
+end
+```
+```ruby
+data = {
+    title: "Moby-Dick",
+    text: "Call me Ishmael...",
+    details: {
+        author: "Herman Melville",
+        pages: 768,
+    }
+}
+p schema.validate_book data
+```
+```
+{:details=>{:language=>["Cannot be null"]}}
+```
+
+## List attributes and DTOs
+
+DTO-Schema provides a `list` method to define list-attributes:
+```ruby
+schema = DTOSchema::define do
+  object :book do
+    required :title, String
+    required :pages, list[String]
+  end
+end
+```
+```ruby
+data = {
+    title: "Moby-Dick",
+    pages: ["Call me Ishmael...", 42]
+}
+p schema.validate_book data
+```
+```
+{:pages=>{1=>["Must be a String"]}}
+```
+
+You may reference a DTO (the same or another) as a list item type:
+```ruby
+schema = DTOSchema::define do
+  object :tree do
+    required :value, Numeric
+    optional :child, list[:tree]
+  end
+end
+```
+```ruby
+data = {
+    value: 42,
+    child: [
+        {
+            value: 12
+        },
+        {
+            value: "wrong!"
+        }
+    ]
+}
+p schema.validate_tree data
+```
+```
+{:child=>{1=>{:value=>["Must be a Numeric"]}}}
+```
